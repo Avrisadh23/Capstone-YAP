@@ -12,6 +12,9 @@ import CommunityDetail from './pages/CommunityDetail'
 import CommunityCreate from './pages/CommunityCreate'
 import CommunityEdit from './pages/CommunityEdit'
 import CommunitiesManage from './pages/CommunitiesManage'
+import MemberCard from './pages/MemberCard'
+import MyEvents from './pages/MyEvents'
+import MyCommunities from './pages/MyCommunities'
 import { AuthProvider } from './context/AuthContext'
 
 function App() {
@@ -22,16 +25,19 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/homepage" element={<Homepage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/member-card" element={<MemberCard />} />
           <Route path="/events" element={<Events />} />
           <Route path="/events/:id" element={<EventDetail />} />
           <Route path="/events/create" element={<EventCreate />} />
           <Route path="/events/:id/edit" element={<EventEdit />} />
           <Route path="/events/manage/list" element={<EventsManage />} />
+          <Route path="/events/myevent" element={<MyEvents />} />
           <Route path="/communities" element={<Communities />} />
           <Route path="/communities/:id" element={<CommunityDetail />} />
           <Route path="/communities/create" element={<CommunityCreate />} />
           <Route path="/communities/:id/edit" element={<CommunityEdit />} />
           <Route path="/communities/manage/list" element={<CommunitiesManage />} />
+          <Route path="/communities/mycommunity" element={<MyCommunities />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

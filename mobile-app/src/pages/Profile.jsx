@@ -11,6 +11,9 @@ const Profile = () => {
   const [email, setEmail] = useState(userEmail || '')
   const [phone, setPhone] = useState('')
   const [city, setCity] = useState('')
+  const [tglLahir, setTglLahir] = useState('')
+  const [fotoProfile, setFotoProfile] = useState(null)
+  const [fotoPreview, setFotoPreview] = useState(null)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
@@ -25,6 +28,18 @@ const Profile = () => {
   const saveProfile = () => {
     if (fullName) {
       alert('Profile berhasil disimpan!')
+    }
+  }
+
+  const handleFotoChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      setFotoProfile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setFotoPreview(reader.result)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -59,6 +74,25 @@ const Profile = () => {
           <div className="profile-section">
             <h2>Informasi Pribadi</h2>
             <div className="form-group">
+              <label className="form-label">Foto Profile</label>
+              <input 
+                type="file" 
+                className="form-input" 
+                accept="image/*"
+                onChange={handleFotoChange}
+                style={{ padding: '8px' }}
+              />
+              {fotoPreview && (
+                <div style={{ marginTop: '12px' }}>
+                  <img 
+                    src={fotoPreview} 
+                    alt="Preview" 
+                    style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #ddd' }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="form-group">
               <label className="form-label">Nama Lengkap</label>
               <input 
                 type="text" 
@@ -69,42 +103,14 @@ const Profile = () => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Email</label>
+              <label className="form-label">Tanggal Lahir</label>
               <input 
-                type="email" 
+                type="date" 
                 className="form-input" 
-                placeholder="Masukkan email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Masukkan tanggal lahir"
+                value={tglLahir}
+                onChange={(e) => setTglLahir(e.target.value)}
               />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Nomor Telepon</label>
-              <input 
-                type="tel" 
-                className="form-input" 
-                placeholder="Masukkan nomor telepon"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Kota</label>
-              <select 
-                className="form-input"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              >
-                <option value="">Pilih kota</option>
-                <option value="Jakarta">Jakarta</option>
-                <option value="Surabaya">Surabaya</option>
-                <option value="Bandung">Bandung</option>
-                <option value="Medan">Medan</option>
-                <option value="Semarang">Semarang</option>
-                <option value="Makassar">Makassar</option>
-                <option value="Palembang">Palembang</option>
-                <option value="Yogyakarta">Yogyakarta</option>
-              </select>
             </div>
             <button className="btn-primary" onClick={saveProfile}>
               Simpan Perubahan

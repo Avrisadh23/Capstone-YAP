@@ -154,7 +154,22 @@ const Homepage = () => {
                 <option value="Surabaya">Surabaya</option>
                 <option value="Bandung">Bandung</option>
                 <option value="Medan">Medan</option>
+                <option value="Semarang">Semarang</option>
+                <option value="Makassar">Makassar</option>
+                <option value="Palembang">Palembang</option>
+                <option value="Depok">Depok</option>
+                <option value="Tangerang">Tangerang</option>
+                <option value="Bekasi">Bekasi</option>
                 <option value="Yogyakarta">Yogyakarta</option>
+                <option value="Malang">Malang</option>
+                <option value="Denpasar">Denpasar</option>
+                <option value="Batam">Batam</option>
+                <option value="Pekanbaru">Pekanbaru</option>
+                <option value="Bandar Lampung">Bandar Lampung</option>
+                <option value="Padang">Padang</option>
+                <option value="Pontianak">Pontianak</option>
+                <option value="Balikpapan">Balikpapan</option>
+                <option value="Manado">Manado</option>
               </select>
               <div className="filter-value">{kota || 'Pilih kota'}</div>
             </div>
@@ -221,6 +236,39 @@ const Homepage = () => {
             ))}
           </div>
         </section>
+
+        <footer className="footer">
+          <div className="footer-content">
+            <div className="footer-section">
+              <div className="footer-logo">Y.G.A</div>
+              <div className="footer-address">
+                PT YGA Solutions<br />
+                Jl. Warid No.100<br />
+                Jakarta, Indonesia
+              </div>
+            </div>
+            <div className="footer-section">
+              <div className="footer-title">Perusahaan</div>
+              <a href="#">Tentang</a>
+              <a href="#">Kebijakan & Privasi</a>
+              <a href="#">Syarat dan Ketentuan</a>
+            </div>
+            <div className="footer-section">
+              <div className="footer-title">Fitur Kita</div>
+              <a href="#">Show Event</a>
+              <a href="#">Join Event</a>
+              <a href="#">Show Komunitas</a>
+              <a href="#">Join Komunitas</a>
+            </div>
+            <div className="footer-section">
+              <div className="footer-title">Hubungi Kami</div>
+              <a href="#">Kontak</a>
+            </div>
+          </div>
+          <div className="footer-bottom">
+            <div>© 2025 YGA Indonesia. All Rights Reserved.</div>
+          </div>
+        </footer>
       </div>
     </Layout>
   )

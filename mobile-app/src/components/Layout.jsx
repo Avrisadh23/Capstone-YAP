@@ -63,6 +63,9 @@ const Layout = ({
             {showMenu && (
               <div className="profile-menu">
                 <Link to="/profile" onClick={() => setShowMenu(false)}>Profile</Link>
+                <Link to="/member-card" onClick={() => setShowMenu(false)}>Kartu Anggota Digital</Link>
+                <Link to="/events/myevent" onClick={() => setShowMenu(false)}>Event Saya</Link>
+                <Link to="/communities/mycommunity" onClick={() => setShowMenu(false)}>Komunitas Saya</Link>
                 <Link to="/events/manage/list" onClick={() => setShowMenu(false)}>Kelola Event</Link>
                 <Link to="/communities/manage/list" onClick={() => setShowMenu(false)}>Kelola Komunitas</Link>
                 <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); }}>Logout</a>
