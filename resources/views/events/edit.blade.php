@@ -43,7 +43,7 @@
     </header>
     <div class="form-container">
         <h1 class="form-title">Edit Event</h1>
-        <form method="POST" action="/events/{{ $event->id }}">
+        <form method="POST" action="/events/{{ $event->id }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             <div class="form-group">
@@ -77,8 +77,17 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">URL Gambar</label>
-                <input type="url" name="image_url" class="form-input" value="{{ $event->image_url }}" placeholder="https://example.com/image.jpg">
+                <label class="form-label">Gambar Event</label>
+                @if($event->image_url)
+                    <div style="margin-bottom: 12px;">
+                        <img src="{{ $event->image_url }}" alt="Current Image" style="max-width: 300px; max-height: 200px; border-radius: 8px; border: 2px solid #ddd;">
+                        <p style="font-size: 12px; color: #666; margin-top: 8px;">Gambar saat ini</p>
+                    </div>
+                @endif
+                <input type="file" name="image" class="form-input" accept="image/*" onchange="previewImage(this)">
+                <div id="imagePreview" style="margin-top: 12px; display: none;">
+                    <img id="previewImg" src="" alt="Preview" style="max-width: 300px; max-height: 200px; border-radius: 8px; border: 2px solid #ddd;">
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Maksimal Peserta</label>
@@ -108,6 +117,23 @@
         </form>
     </div>
 </div>
+<script>
+    function previewImage(input) {
+        const preview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+</script>
 </body>
 </html>
 

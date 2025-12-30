@@ -41,7 +41,7 @@
     </header>
     <div class="form-container">
         <h1 class="form-title">Buat Event Baru</h1>
-        <form method="POST" action="/events">
+        <form method="POST" action="/events" enctype="multipart/form-data">
             @csrf
             <div class="form-group">
                 <label class="form-label">Judul Event *</label>
@@ -74,8 +74,11 @@
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">URL Gambar</label>
-                <input type="url" name="image_url" class="form-input" placeholder="https://example.com/image.jpg">
+                <label class="form-label">Gambar Event</label>
+                <input type="file" name="image" class="form-input" accept="image/*" onchange="previewImage(this)">
+                <div id="imagePreview" style="margin-top: 12px; display: none;">
+                    <img id="previewImg" src="" alt="Preview" style="max-width: 300px; max-height: 200px; border-radius: 8px; border: 2px solid #ddd;">
+                </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Maksimal Peserta</label>
@@ -100,6 +103,23 @@
         </form>
     </div>
 </div>
+<script>
+    function previewImage(input) {
+        const preview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+</script>
 </body>
 </html>
 

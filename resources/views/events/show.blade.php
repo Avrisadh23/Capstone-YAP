@@ -66,9 +66,16 @@
     <header>
         <div class="logo"><a href="/events">← Kembali ke Events</a></div>
         <div class="profile-dropdown">
-            <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileMenu()">U</div>
+            @if(isset($user) && $user && $user->foto_profile)
+                <img src="{{ asset('storage/' . $user->foto_profile) }}" alt="Profile" class="profile-avatar" id="profileAvatar" onclick="toggleProfileMenu()" style="object-fit: cover; cursor: pointer;">
+            @else
+                <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileMenu()">U</div>
+            @endif
             <div class="profile-menu" id="profileMenu">
                 <a href="/profile">Profile</a>
+                <a href="/events/myevent">Event Saya</a>
+                <a href="/communities/mycommunity">Komunitas Saya</a>
+                <a href="/member-card">Kartu Anggota Digital</a>
                 <a href="/events/manage/list">Kelola Event</a>
                 <a href="/communities/manage/list">Kelola Komunitas</a>
                 <a href="#" onclick="logout(); return false;">Logout</a>
@@ -110,6 +117,35 @@
                     <p>{{ $event->requirements }}</p>
                 </div>
                 @endif
+                
+                @if($isJoined)
+                <div class="detail-section">
+                    <h3>Peserta Event</h3>
+                    <div style="margin-top: 16px;">
+                        @foreach($event->participants as $participant)
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px;">
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 4px;">{{ $participant->user_name ?? $participant->user_email }}</div>
+                                <div style="font-size: 12px; color: #666;">
+                                    @if($participant->role === 'pengurus')
+                                        <span style="background: #003087; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">Pengurus</span>
+                                    @else
+                                        <span style="background: #e0e0e0; color: #666; padding: 2px 8px; border-radius: 4px; font-size: 11px;">Peserta</span>
+                                    @endif
+                                </div>
+                            </div>
+                            @if($isPengurus && $participant->role !== 'pengurus')
+                            <form method="POST" action="/events/{{ $event->id }}/participants/{{ $participant->id }}" style="margin: 0;" onsubmit="return confirm('Yakin ingin menghapus peserta ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" style="background: #ff3b30; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;">Hapus</button>
+                            </form>
+                            @endif
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
             </div>
             <div class="detail-sidebar">
                 <div class="info-box">
@@ -149,7 +185,12 @@
                     @endif
                 </div>
                 @if($isJoined)
-                <button class="btn-secondary" disabled>Sudah Bergabung</button>
+                    @if($isPengurus)
+                        <a href="/events/{{ $event->id }}/edit" class="btn-primary" style="display: block; text-align: center; margin-bottom: 8px;">Edit Event</a>
+                        <button class="btn-secondary" disabled>Anda adalah Pengurus</button>
+                    @else
+                        <button class="btn-secondary" disabled>Sudah Bergabung</button>
+                    @endif
                 @else
                 <button class="btn-primary" onclick="openJoinModal()">Join Event</button>
                 @endif
@@ -196,6 +237,12 @@
         if (avatar && userEmail) {
             avatar.textContent = userEmail.charAt(0).toUpperCase();
         }
+        
+        // Update email field in join form with localStorage email
+        const emailInput = document.querySelector('input[name="user_email"]');
+        if (emailInput) {
+            emailInput.value = userEmail;
+        }
     });
     
     function toggleProfileMenu() {
@@ -209,6 +256,12 @@
     }
     
     function openJoinModal() {
+        // Ensure email is set from localStorage when opening modal
+        const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
+        const emailInput = document.querySelector('input[name="user_email"]');
+        if (emailInput) {
+            emailInput.value = userEmail;
+        }
         document.getElementById('joinModal').classList.add('active');
     }
     

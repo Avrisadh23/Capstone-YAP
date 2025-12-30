@@ -71,15 +71,29 @@
             <a href="#partner">Partner With Us</a>
         </nav>
         <div class="profile-dropdown">
-            <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileMenu()">U</div>
+            @if(isset($user) && $user && $user->foto_profile)
+                <img src="{{ asset('storage/' . $user->foto_profile) }}" alt="Profile" class="profile-avatar" id="profileAvatar" onclick="toggleProfileMenu()" style="object-fit: cover; cursor: pointer;">
+            @else
+                <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileMenu()">U</div>
+            @endif
             <div class="profile-menu" id="profileMenu">
                 <a href="/profile">Profile</a>
+                <a href="/member-card">Kartu Anggota Digital</a>
+                <a href="/events/myevent">Event Saya</a>
+                <a href="/communities/mycommunity">Komunitas Saya</a>
                 <a href="/events/manage/list">Kelola Event</a>
                 <a href="/communities/manage/list">Kelola Komunitas</a>
                 <a href="#" onclick="logout(); return false;">Logout</a>
             </div>
         </div>
     </header>
+
+    @if(session('success'))
+        <div style="background: #efe; border: 1px solid #cfc; color: #3c3; padding: 12px 16px; margin: 20px 40px; border-radius: 8px; font-size: 14px; display: flex; align-items: center; justify-content: space-between;">
+            <span>{{ session('success') }}</span>
+            <button onclick="this.parentElement.style.display='none'" style="background: none; border: none; color: #3c3; font-size: 18px; cursor: pointer; padding: 0 8px;">×</button>
+        </div>
+    @endif
 
     <div class="filters">
         <div class="select">
@@ -227,25 +241,75 @@
 </div>
 
 <script>
-    // Check if logged in
-    window.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('isLoggedIn') !== 'true') {
-            window.location.href = '/';
+    // Helper function to get cookie value
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+    
+    // Check if logged in - with delay to allow cookies to be set
+    (function() {
+        let checkCount = 0;
+        const maxChecks = 10; // Check up to 10 times (1 second total)
+        
+        function checkLogin() {
+            checkCount++;
+            
+            // Get user email from cookie or localStorage
+            const cookieEmail = getCookie('user_email');
+            const localStorageEmail = localStorage.getItem('userEmail');
+            const userEmail = cookieEmail || localStorageEmail;
+            
+            // If we have email from cookie, always set localStorage
+            if (cookieEmail) {
+                localStorage.setItem('userEmail', cookieEmail);
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+            
+            // Check if user is logged in (either localStorage or cookie)
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || cookieEmail;
+            
+            if (isLoggedIn) {
+                // User is logged in - set everything and continue
+                if (cookieEmail && localStorage.getItem('isLoggedIn') !== 'true') {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userEmail', cookieEmail);
+                }
+                
+                // Set user email in profile avatar (only if it's a div, not an img)
+                const finalEmail = userEmail || localStorage.getItem('userEmail') || 'user@example.com';
+                const avatar = document.getElementById('profileAvatar');
+                if (avatar && finalEmail && avatar.tagName === 'DIV') {
+                    avatar.textContent = finalEmail.charAt(0).toUpperCase();
+                }
+                
+                // Initialize: show all cards by default
+                const allCards = document.querySelectorAll('.community-card, .event-card');
+                allCards.forEach(card => {
+                    card.style.display = 'block';
+                });
+            } else {
+                // User not logged in yet - check again if we haven't exceeded max checks
+                if (checkCount < maxChecks) {
+                    setTimeout(checkLogin, 100); // Check again in 100ms
+                } else {
+                    // After max checks, if still not logged in, redirect
+                    window.location.href = '/';
+                }
+            }
         }
         
-        // Set user email in profile avatar
-        const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
-        const avatar = document.getElementById('profileAvatar');
-        if (avatar && userEmail) {
-            avatar.textContent = userEmail.charAt(0).toUpperCase();
+        // Start checking after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(checkLogin, 50); // Small initial delay
+            });
+        } else {
+            setTimeout(checkLogin, 50); // DOM already ready
         }
-        
-        // Initialize: show all cards by default
-        const allCards = document.querySelectorAll('.community-card, .event-card');
-        allCards.forEach(card => {
-            card.style.display = 'block';
-        });
-    });
+    })();
     
     function toggleProfileMenu() {
         const menu = document.getElementById('profileMenu');
@@ -255,6 +319,8 @@
     function logout() {
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('userEmail');
+        // Clear cookie by setting it to expire
+        document.cookie = 'user_email=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
         window.location.href = '/';
     }
     

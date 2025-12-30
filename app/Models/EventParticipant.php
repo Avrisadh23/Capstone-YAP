@@ -10,6 +10,7 @@ class EventParticipant extends Model
     protected $fillable = [
         'event_id',
         'user_email',
+        'role',
         'user_name',
         'phone',
         'notes',

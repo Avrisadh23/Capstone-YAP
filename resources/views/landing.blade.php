@@ -446,10 +446,10 @@
             </div>
             <div class="footer-col">
                 <div class="footer-title">Fitur Kita</div>
-                <a href="#" style="display:block; margin-bottom:10px; color:#666; font-size:13px;">Sparring</a>
-                <a href="#" style="display:block; margin-bottom:10px; color:#666; font-size:13px;">Match Berbagi</a>
-                <a href="#" style="display:block; margin-bottom:10px; color:#666; font-size:13px;">Direktori Tim</a>
-                <a href="#" style="display:block; margin-bottom:10px; color:#666; font-size:13px;">Direktori Lapangan</a>
+                <a href="#" style="display:block; margin-bottom:10px; color:#666; font-size:13px;">Show Event</a>
+                <a href="#" style="display:block; margin-bottom:10px; color:#666; font-size:13px;">Join Event</a>
+                <a href="#" style="display:block; margin-bottom:10px; color:#666; font-size:13px;">Show Komunitas</a>
+                <a href="#" style="display:block; margin-bottom:10px; color:#666; font-size:13px;">Join Komunitas</a>
             </div>
             <div class="footer-col">
                 <div class="footer-title">Hubungi Kami</div>
@@ -492,8 +492,42 @@
             <div class="modal-switch">
                 Sudah punya akun Y.G.A? <a href="#" onclick="switchToLogin(); return false;">Masuk</a>
             </div>
-            <input type="text" class="modal-input" id="registerInput" placeholder="Nomor Ponsel atau Email">
-            <button class="modal-button primary" id="registerNextBtn" onclick="handleNext('register')">Selanjutnya</button>
+            @if(session('error') && !session('_login_error'))
+                <div style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
+                    {{ session('error') }}
+                </div>
+            @endif
+            @if($errors->any() && !session('_login_error'))
+                <div style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
+                    <ul style="margin: 0; padding-left: 20px;">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+            @if(session('success') && !session('_login_success'))
+                <div style="background: #efe; border: 1px solid #cfc; color: #3c3; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
+                    {{ session('success') }}
+                </div>
+            @endif
+            <form id="registerFormData" method="POST" action="/register" enctype="multipart/form-data">
+                @csrf
+                <input type="email" class="modal-input" name="email" id="registerEmail" placeholder="Email" value="{{ old('email') }}" required>
+                <input type="text" class="modal-input" name="nama_lengkap" id="registerNamaLengkap" placeholder="Nama Lengkap" value="{{ old('nama_lengkap') }}" required>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">Tanggal Lahir</label>
+                    <input type="date" class="modal-input" name="tgl_lahir" id="registerTglLahir" value="{{ old('tgl_lahir') }}" required>
+                </div>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 13px; color: #666; margin-bottom: 6px;">Foto Profile</label>
+                    <input type="file" class="modal-input" name="foto_profile" id="registerFotoProfile" accept="image/*" style="padding: 8px;">
+                    <div id="fotoPreview" style="margin-top: 8px; display: none;">
+                        <img id="previewImage" src="" alt="Preview" style="width: 80px; height: 80px; border-radius: 8px; object-fit: cover; border: 2px solid #ddd;">
+                    </div>
+                </div>
+                <button type="submit" class="modal-button primary active" id="registerNextBtn">Daftar</button>
+            </form>
             <div class="modal-separator">atau</div>
             <button class="modal-button google" onclick="handleGoogleAuth('register')">
                 <span class="google-icon">G</span>
@@ -507,8 +541,21 @@
             <div class="modal-switch">
                 Belum punya akun? <a href="#" onclick="switchToRegister(); return false;">Daftar</a>
             </div>
-            <input type="text" class="modal-input" id="loginInput" placeholder="Nomor Ponsel atau Email">
-            <button class="modal-button primary" id="loginNextBtn" onclick="handleNext('login')">Selanjutnya</button>
+            @if(session('error') && session('_login_error'))
+                <div style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
+                    {{ session('error') }}
+                </div>
+            @endif
+            @if(session('success') && session('_login_success'))
+                <div style="background: #efe; border: 1px solid #cfc; color: #3c3; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">
+                    {{ session('success') }}
+                </div>
+            @endif
+            <form id="loginFormData" method="POST" action="/login">
+                @csrf
+                <input type="email" class="modal-input" id="loginInput" name="email" placeholder="Email" required>
+                <button type="submit" class="modal-button primary active" id="loginNextBtn">Selanjutnya</button>
+            </form>
             <div class="modal-separator">atau</div>
             <button class="modal-button google" onclick="handleGoogleAuth('login')">
                 <span class="google-icon">G</span>
@@ -550,7 +597,10 @@
     function switchToRegister() {
         document.getElementById('loginForm').style.display = 'none';
         document.getElementById('registerForm').style.display = 'block';
-        document.getElementById('registerInput').focus();
+        const registerEmail = document.getElementById('registerEmail');
+        if (registerEmail) {
+            registerEmail.focus();
+        }
     }
     
     
@@ -565,20 +615,45 @@
     }
     
     function handleNext(type) {
-        const input = type === 'login' ? document.getElementById('loginInput') : document.getElementById('registerInput');
-        const value = input.value.trim();
-        
-        if (!value) {
-            alert('Harap masukkan nomor ponsel atau email');
+        if (type === 'register') {
+            // Register form will be submitted via form submit
             return;
         }
         
-        // Simulate login/register success
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userEmail', value);
-        
-        // Redirect to homepage
-        window.location.href = '/homepage';
+        // Login form will be submitted via form submit
+        const form = document.getElementById('loginFormData');
+        if (form) {
+            form.submit();
+        }
+    }
+    
+    // Handle foto profile preview
+    const fotoInput = document.getElementById('registerFotoProfile');
+    if (fotoInput) {
+        fotoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('fotoPreview');
+                    const previewImage = document.getElementById('previewImage');
+                    if (preview && previewImage) {
+                        previewImage.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Handle form submit - don't block default submission
+    const registerForm = document.getElementById('registerFormData');
+    if (registerForm) {
+        registerForm.addEventListener('submit', function(e) {
+            // Let form submit normally to backend
+            // No need to prevent default
+        });
     }
     
     // Close modal on ESC key
@@ -588,24 +663,46 @@
         }
     });
     
-    // Enable/disable button based on input
-    document.getElementById('registerInput').addEventListener('input', function() {
-        const btn = document.getElementById('registerNextBtn');
-        if (this.value.trim()) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
+    // Auto-open login modal if there's a login error
+    @if(session('error') && session('_login_error'))
+        document.addEventListener('DOMContentLoaded', function() {
+            openModal('login');
+        });
+    @endif
     
-    document.getElementById('loginInput').addEventListener('input', function() {
-        const btn = document.getElementById('loginNextBtn');
-        if (this.value.trim()) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
-    });
+    // Auto-open register modal if there's a register error or validation errors
+    @if((session('error') && !session('_login_error')) || ($errors->any() && !session('_login_error')))
+        document.addEventListener('DOMContentLoaded', function() {
+            openModal('register');
+        });
+    @endif
+    
+    // Enable/disable button based on input
+    const registerEmail = document.getElementById('registerEmail');
+    if (registerEmail) {
+        registerEmail.addEventListener('input', function() {
+            const btn = document.getElementById('registerNextBtn');
+            if (btn) {
+                if (this.value.trim()) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
+        });
+    }
+    
+    const loginInput = document.getElementById('loginInput');
+    if (loginInput) {
+        loginInput.addEventListener('input', function() {
+            const btn = document.getElementById('loginNextBtn');
+            if (this.value.trim()) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
 </script>
 
 </body>

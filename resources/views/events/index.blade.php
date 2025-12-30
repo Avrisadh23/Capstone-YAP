@@ -70,9 +70,16 @@
             <a href="/homepage#partner">Partner With Us</a>
         </nav>
         <div class="profile-dropdown">
-            <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileMenu()">U</div>
+            @if(isset($user) && $user && $user->foto_profile)
+                <img src="{{ asset('storage/' . $user->foto_profile) }}" alt="Profile" class="profile-avatar" id="profileAvatar" onclick="toggleProfileMenu()" style="object-fit: cover; cursor: pointer;">
+            @else
+                <div class="profile-avatar" id="profileAvatar" onclick="toggleProfileMenu()">U</div>
+            @endif
             <div class="profile-menu" id="profileMenu">
                 <a href="/profile">Profile</a>
+                <a href="/events/myevent">Event Saya</a>
+                <a href="/communities/mycommunity">Komunitas Saya</a>
+                <a href="/member-card">Kartu Anggota Digital</a>
                 <a href="/events/manage/list">Kelola Event</a>
                 <a href="/communities/manage/list">Kelola Komunitas</a>
                 <a href="#" onclick="logout(); return false;">Logout</a>

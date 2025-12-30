@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y.G.A - Communities</title>
+    <title>Y.G.A - Komunitas Saya</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -28,17 +28,13 @@
         .profile-menu.active { display: block; }
         .profile-menu a { display: block; padding: 12px 16px; font-size: 14px; color: #333; transition: background 0.2s; }
         .profile-menu a:hover { background: #f5f5f5; }
-        .filters { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #003087; color: #fff; padding: 10px 14px; border-radius: 8px; width: calc(100% - 80px); margin: 20px 40px 30px; align-items: center; font-size: 12px; }
-        .filters .select { background: rgba(255,255,255,0.1); padding: 10px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px; cursor: pointer; position: relative; }
-        .filters .select:hover { background: rgba(255,255,255,0.15); }
-        .filters .select select { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-        .filters .go { background: #063a93; padding: 10px 16px; border-radius: 6px; text-align: center; cursor: pointer; }
-        .filters .go:hover { background: #052d7a; }
         .section { padding: 40px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .section-title { font-size: 28px; font-weight: 700; color: #0f1218; }
         .btn-primary { background: var(--blue); color: #fff; padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .btn-primary:hover { background: #002766; }
+        .btn-secondary { background: #fff; color: var(--blue); padding: 12px 24px; border: 1px solid var(--blue); border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; margin-right: 12px; }
+        .btn-secondary:hover { background: #f0f4ff; }
         .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
         .card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
         .card:hover { transform: translateY(-4px); box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
@@ -51,9 +47,12 @@
         .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 32px; }
         .pagination a, .pagination span { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; color: #333; }
         .pagination .active { background: var(--blue); color: #fff; border-color: var(--blue); }
+        .empty-state { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--gray); }
+        .empty-state-icon { font-size: 64px; margin-bottom: 16px; }
+        .empty-state h3 { font-size: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+        .empty-state p { font-size: 14px; margin-bottom: 24px; }
         @media (max-width: 1024px) {
             .cards-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-            .filters { grid-template-columns: 1fr; width: calc(100% - 40px); margin: 20px 20px 30px; }
             .section { padding: 24px; }
             header { padding: 18px 24px; }
         }
@@ -87,45 +86,13 @@
         </div>
     </header>
 
-    <div class="filters">
-        <div class="select">
-            <span style="color: #ff3b30; font-size: 14px; margin-right: 8px;">📍</span>
-            <div style="flex: 1;">
-                <div style="opacity:.6; font-size:11px;">Aktivitas</div>
-                <div style="font-weight:600;" id="aktivitasText">{{ $filters['category'] ?: 'Pilih aktivitas' }}</div>
-            </div>
-            <span>⌄</span>
-            <select onchange="updateFilter('aktivitas', this.value); applyFilters();">
-                <option value="">Pilih aktivitas</option>
-                <option value="Hobi" {{ $filters['category'] === 'Hobi' ? 'selected' : '' }}>Hobi</option>
-                <option value="Olahraga" {{ $filters['category'] === 'Olahraga' ? 'selected' : '' }}>Olahraga</option>
-                <option value="Workshop" {{ $filters['category'] === 'Workshop' ? 'selected' : '' }}>Workshop</option>
-                <option value="Gaming" {{ $filters['category'] === 'Gaming' ? 'selected' : '' }}>Gaming</option>
-            </select>
-        </div>
-        <div class="select">
-            <span style="color: #ff3b30; font-size: 14px; margin-right: 8px;">📍</span>
-            <div style="flex: 1;">
-                <div style="opacity:.6; font-size:11px;">Lokasi</div>
-                <div style="font-weight:600;" id="kotaText">{{ $filters['location'] ?: 'Pilih kota' }}</div>
-            </div>
-            <span>⌄</span>
-            <select onchange="updateFilter('kota', this.value); applyFilters();">
-                <option value="">Pilih kota</option>
-                <option value="Jakarta" {{ $filters['location'] === 'Jakarta' ? 'selected' : '' }}>Jakarta</option>
-                <option value="Surabaya" {{ $filters['location'] === 'Surabaya' ? 'selected' : '' }}>Surabaya</option>
-                <option value="Bandung" {{ $filters['location'] === 'Bandung' ? 'selected' : '' }}>Bandung</option>
-                <option value="Medan" {{ $filters['location'] === 'Medan' ? 'selected' : '' }}>Medan</option>
-                <option value="Yogyakarta" {{ $filters['location'] === 'Yogyakarta' ? 'selected' : '' }}>Yogyakarta</option>
-            </select>
-        </div>
-        <div class="go" onclick="applyFilters()">Temukan →</div>
-    </div>
-
     <section class="section">
         <div class="section-header">
-            <h2 class="section-title">Daftar Komunitas</h2>
-            <a href="/communities/create" class="btn-primary">+ Buat Komunitas</a>
+            <h2 class="section-title">Komunitas Saya</h2>
+            <div>
+                <a href="/communities" class="btn-secondary">← Kembali ke Daftar Komunitas</a>
+                <a href="/communities/create" class="btn-primary">+ Buat Komunitas</a>
+            </div>
         </div>
         <div class="cards-grid">
             @forelse($communities as $community)
@@ -146,14 +113,19 @@
                 </div>
             </a>
             @empty
-            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--gray);">
-                Tidak ada komunitas yang ditemukan.
+            <div class="empty-state">
+                <div class="empty-state-icon">👥</div>
+                <h3>Belum Ada Komunitas</h3>
+                <p>Anda belum bergabung dengan komunitas manapun. Mulai jelajahi komunitas yang tersedia!</p>
+                <a href="/communities" class="btn-primary">Jelajahi Komunitas</a>
             </div>
             @endforelse
         </div>
+        @if($communities->hasPages())
         <div class="pagination">
             {{ $communities->links() }}
         </div>
+        @endif
     </section>
 </div>
 
@@ -167,6 +139,15 @@
         if (avatar && userEmail) {
             avatar.textContent = userEmail.charAt(0).toUpperCase();
         }
+        
+        // Send user_email to backend if not in URL
+        if (!window.location.search.includes('user_email')) {
+            const url = new URL(window.location);
+            url.searchParams.set('user_email', userEmail);
+            window.history.replaceState({}, '', url);
+            // Reload to send user_email to backend
+            window.location.reload();
+        }
     });
     
     function toggleProfileMenu() {
@@ -177,23 +158,6 @@
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('userEmail');
         window.location.href = '/';
-    }
-    
-    function updateFilter(type, value) {
-        if (type === 'aktivitas') {
-            document.getElementById('aktivitasText').textContent = value || 'Pilih aktivitas';
-        } else if (type === 'kota') {
-            document.getElementById('kotaText').textContent = value || 'Pilih kota';
-        }
-    }
-    
-    function applyFilters() {
-        const aktivitas = document.querySelector('select[onchange*="aktivitas"]').value;
-        const kota = document.querySelector('select[onchange*="kota"]').value;
-        const params = new URLSearchParams();
-        if (aktivitas) params.append('category', aktivitas);
-        if (kota) params.append('location', kota);
-        window.location.href = '/communities?' + params.toString();
     }
     
     document.addEventListener('click', function(e) {

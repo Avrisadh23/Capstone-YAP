@@ -6,11 +6,23 @@ use App\Models\AppLink;
 use App\Models\Feature;
 use App\Models\Showcase;
 use App\Models\Testimonial;
+use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        // Don't redirect here - let JavaScript handle it to avoid race conditions
+        // The JavaScript will check both cookie and localStorage
+        
+        // Get user for avatar
+        $userEmail = session('user_email') ?? $request->cookie('user_email');
+        $user = null;
+        if ($userEmail) {
+            $userEmail = trim(strtolower($userEmail));
+            $user = \App\Models\User::where('email', $userEmail)->first();
+        }
+        
         $features = Feature::query()->orderBy('order')->get();
         $showcases = Showcase::query()->orderBy('order')->get();
         $testimonials = Testimonial::query()->latest()->get();
@@ -149,7 +161,7 @@ class HomeController extends Controller
             ],
         ];
 
-        return view('homepage', compact('features', 'showcases', 'testimonials', 'filters', 'appLinks', 'communities', 'events'));
+        return view('homepage', compact('features', 'showcases', 'testimonials', 'filters', 'appLinks', 'communities', 'events', 'user'));
     }
 }
 

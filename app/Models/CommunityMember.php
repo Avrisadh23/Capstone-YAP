@@ -10,6 +10,7 @@ class CommunityMember extends Model
     protected $fillable = [
         'community_id',
         'user_email',
+        'role',
         'user_name',
         'phone',
         'notes',

@@ -62,9 +62,18 @@
             <a href="/homepage#partner">Partner With Us</a>
         </nav>
         <div class="profile-dropdown">
-            <div class="profile-avatar" id="headerAvatar" onclick="toggleProfileMenu()">U</div>
+            @if($user && $user->foto_profile)
+                <img src="{{ asset('storage/' . $user->foto_profile) }}" alt="Profile" class="profile-avatar" id="headerAvatar" onclick="toggleProfileMenu()" style="object-fit: cover; cursor: pointer;">
+            @else
+                <div class="profile-avatar" id="headerAvatar" onclick="toggleProfileMenu()">U</div>
+            @endif
             <div class="profile-menu" id="profileMenu">
                 <a href="/profile">Profile</a>
+                <a href="/member-card">Kartu Anggota Digital</a>
+                <a href="/events/myevent">Event Saya</a>
+                <a href="/communities/mycommunity">Komunitas Saya</a>
+                <a href="/events/manage/list">Kelola Event</a>
+                <a href="/communities/manage/list">Kelola Komunitas</a>
                 <a href="#" onclick="logout(); return false;">Logout</a>
             </div>
         </div>
@@ -72,42 +81,48 @@
 
     <div class="profile-container">
         <div class="profile-header">
-            <div class="profile-avatar-large">U</div>
+            @if($user && $user->foto_profile)
+                <img src="{{ asset('storage/' . $user->foto_profile) }}" alt="Foto Profile" class="profile-avatar-large" style="object-fit: cover;">
+            @else
+                <div class="profile-avatar-large" id="profileAvatarLarge">{{ strtoupper(substr($user->email ?? 'U', 0, 1)) }}</div>
+            @endif
             <div class="profile-info">
-                <h1 id="userName">User Name</h1>
-                <p id="userEmail">user@example.com</p>
+                <h1 id="userName">{{ $user->nama_lengkap ?? $user->name ?? 'User Name' }}</h1>
+                <p id="userEmail">{{ $user->email ?? 'user@example.com' }}</p>
             </div>
         </div>
 
         <div class="profile-section">
             <h2>Informasi Pribadi</h2>
-            <div class="form-group">
-                <label class="form-label">Nama Lengkap</label>
-                <input type="text" class="form-input" id="fullName" placeholder="Masukkan nama lengkap">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-input" id="email" placeholder="Masukkan email">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Nomor Telepon</label>
-                <input type="tel" class="form-input" id="phone" placeholder="Masukkan nomor telepon">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Kota</label>
-                <select class="form-input" id="city">
-                    <option value="">Pilih kota</option>
-                    <option value="Jakarta">Jakarta</option>
-                    <option value="Surabaya">Surabaya</option>
-                    <option value="Bandung">Bandung</option>
-                    <option value="Medan">Medan</option>
-                    <option value="Semarang">Semarang</option>
-                    <option value="Makassar">Makassar</option>
-                    <option value="Palembang">Palembang</option>
-                    <option value="Yogyakarta">Yogyakarta</option>
-                </select>
-            </div>
-            <button class="btn-primary" onclick="saveProfile()">Simpan Perubahan</button>
+            @if(session('success'))
+                <div style="background: #d4edda; color: #155724; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if(session('error'))
+                <div style="background: #f8d7da; color: #721c24; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+                    {{ session('error') }}
+                </div>
+            @endif
+            <form method="POST" action="/profile/update" enctype="multipart/form-data">
+                @csrf
+                <div class="form-group">
+                    <label class="form-label">Foto Profile</label>
+                    <input type="file" name="foto_profile" class="form-input" accept="image/*" onchange="previewProfilePhoto(this)">
+                    <div id="photoPreview" style="margin-top: 12px; display: none;">
+                        <img id="previewPhoto" src="" alt="Preview" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" name="nama_lengkap" class="form-input" placeholder="Masukkan nama lengkap" value="{{ $user->nama_lengkap ?? '' }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tanggal Lahir</label>
+                    <input type="date" name="tgl_lahir" class="form-input" placeholder="Masukkan tanggal lahir" value="{{ $user->tgl_lahir ? $user->tgl_lahir->format('Y-m-d') : '' }}">
+                </div>
+                <button type="submit" class="btn-primary">Simpan Perubahan</button>
+            </form>
         </div>
 
         <div class="profile-section">
@@ -126,21 +141,41 @@
 </div>
 
 <script>
-    // Load user data from localStorage
+    // Load user data
     window.addEventListener('DOMContentLoaded', function() {
-        const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
-        document.getElementById('userEmail').textContent = userEmail;
-        document.getElementById('email').value = userEmail;
-        
-        // Set avatar initials
-        const headerAvatar = document.getElementById('headerAvatar');
-        const profileAvatar = document.querySelector('.profile-avatar-large');
-        if (headerAvatar && userEmail) {
-            headerAvatar.textContent = userEmail.charAt(0).toUpperCase();
-        }
-        if (profileAvatar && userEmail) {
-            profileAvatar.textContent = userEmail.charAt(0).toUpperCase();
-        }
+        @if($user)
+            const userEmail = '{{ $user->email }}';
+            const userName = '{{ $user->nama_lengkap ?? $user->name ?? "" }}';
+            document.getElementById('userEmail').textContent = userEmail;
+            document.getElementById('email').value = userEmail;
+            if (userName) {
+                document.getElementById('userName').textContent = userName;
+                document.getElementById('fullName').value = userName;
+            }
+            @if($user->tgl_lahir)
+                document.getElementById('tglLahir').value = '{{ $user->tgl_lahir->format('Y-m-d') }}';
+            @endif
+            
+            // Set avatar initials
+            const headerAvatar = document.getElementById('headerAvatar');
+            if (headerAvatar && userEmail) {
+                headerAvatar.textContent = userEmail.charAt(0).toUpperCase();
+            }
+        @else
+            const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
+            document.getElementById('userEmail').textContent = userEmail;
+            document.getElementById('email').value = userEmail;
+            
+            // Set avatar initials (only if not an image)
+            const headerAvatar = document.getElementById('headerAvatar');
+            const profileAvatar = document.getElementById('profileAvatarLarge');
+            if (headerAvatar && userEmail && headerAvatar.tagName === 'DIV') {
+                headerAvatar.textContent = userEmail.charAt(0).toUpperCase();
+            }
+            if (profileAvatar && userEmail && profileAvatar.tagName === 'DIV') {
+                profileAvatar.textContent = userEmail.charAt(0).toUpperCase();
+            }
+        @endif
         
         // Check if logged in
         if (localStorage.getItem('isLoggedIn') !== 'true') {
