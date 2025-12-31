@@ -19,8 +19,73 @@ const Communities = () => {
       return
     }
 
-    // Dummy data - replace with API call
-    setCommunities([
+    const loadCommunities = async () => {
+      try {
+        // Ambil komunitas dari localStorage (yang sudah dibuat)
+        const localCommunities = JSON.parse(localStorage.getItem('localCommunities') || '[]')
+        
+        // Convert local communities ke format yang sama
+        const localFormatted = localCommunities.map((comm) => {
+          // Hitung members count real-time dari join records
+          const existingJoins = JSON.parse(localStorage.getItem('communityJoins') || '[]')
+          const creatorEmail = comm.creator_email ? comm.creator_email.toLowerCase().trim() : ''
+          const membersList = []
+          
+          // Tambahkan creator sebagai Pengurus (hanya sekali)
+          if (creatorEmail) {
+            membersList.push({
+              user_email: comm.creator_email,
+              role: 'Pengurus'
+            })
+          }
+          
+          // Tambahkan anggota yang sudah join (tidak termasuk creator untuk menghindari duplikasi)
+          const joinedMembers = existingJoins.filter(j => {
+            const joinCommId = j.community_id
+            const joinEmail = (j.user_email || '').toLowerCase().trim()
+            // Filter: harus match community_id DAN bukan creator
+            return (joinCommId === comm.id || String(joinCommId) === String(comm.id)) && joinEmail !== creatorEmail
+          })
+          
+          joinedMembers.forEach(j => {
+            membersList.push({
+              user_email: j.user_email,
+              role: j.role || 'Anggota'
+            })
+          })
+          
+          // Real-time members count = creator (1) + anggota yang join
+          const realMembersCount = membersList.length
+          
+          return {
+            id: comm.id || `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: comm.name,
+            description: comm.description,
+            members_count: realMembersCount,
+            image_url: comm.image || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80',
+            category: comm.category,
+            location: comm.location,
+            contact: comm.contact,
+            rules: comm.rules,
+            isLocal: true
+          }
+        })
+        
+        // Coba ambil dari API
+        let apiCommunities = []
+        try {
+          const response = await getCommunities()
+          if (response && Array.isArray(response)) {
+            apiCommunities = response
+          } else if (response && response.data && Array.isArray(response.data)) {
+            apiCommunities = response.data
+          }
+        } catch (error) {
+          console.warn('Error fetching communities from API:', error)
+        }
+        
+        // Dummy data tetap ada
+        const dummyCommunities = [
       {
         id: 1,
         name: 'Komunitas Wibu Jakarta',
@@ -48,8 +113,38 @@ const Communities = () => {
         category: 'Olahraga',
         location: 'Surabaya'
       },
-    ])
+        ]
+        
+        // Gabungkan: local communities (yang baru dibuat) di atas, lalu dummy, lalu API
+        const allCommunities = [...localFormatted, ...dummyCommunities, ...apiCommunities]
+        setCommunities(allCommunities)
+      } catch (error) {
+        console.error('Error loading communities:', error)
+      } finally {
     setLoading(false)
+      }
+    }
+
+    loadCommunities()
+
+    // Listen untuk perubahan di localStorage (saat komunitas baru dibuat)
+    const handleStorageChange = () => {
+      loadCommunities()
+    }
+
+    window.addEventListener('localStorageUpdated', handleStorageChange)
+    
+    // Listen untuk perubahan join community
+    const handleJoinUpdate = () => {
+      loadCommunities()
+    }
+    
+    window.addEventListener('communityJoined', handleJoinUpdate)
+
+    return () => {
+      window.removeEventListener('localStorageUpdated', handleStorageChange)
+      window.removeEventListener('communityJoined', handleJoinUpdate)
+    }
   }, [isLoggedIn, navigate])
 
   const applyFilters = () => {

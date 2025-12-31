@@ -25,7 +25,7 @@
 <body>
     <div class="member-card">
         <div class="card-header">
-            <div class="card-logo">Y.G.A</div>
+            <div class="card-logo">Y.A.P</div>
             <div class="card-badge">ANGGOTA</div>
         </div>
         <div class="card-body">
@@ -47,7 +47,7 @@
             </div>
         </div>
         <div class="card-footer">
-            Kartu Anggota Digital Y.G.A Community Platform
+            Kartu Anggota Digital Y.A.P Community Platform
         </div>
     </div>
 </body>

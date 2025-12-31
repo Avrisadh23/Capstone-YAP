@@ -19,8 +19,40 @@ const Events = () => {
       return
     }
 
-    // Dummy data - replace with API call
-    setEvents([
+    const loadEvents = async () => {
+      try {
+        // Ambil event dari localStorage (yang sudah dibuat)
+        const localEvents = JSON.parse(localStorage.getItem('localEvents') || '[]')
+        
+        // Convert local events ke format yang sama
+        const localFormatted = localEvents.map((event) => ({
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          date: event.date,
+          time: event.time,
+          location: event.location,
+          image_url: event.image || 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=400&q=80',
+          category: event.category,
+          participants_count: event.participants_count || 0,
+          isLocal: true
+        }))
+        
+        // Coba ambil dari API
+        let apiEvents = []
+        try {
+          const response = await getEvents()
+          if (response && Array.isArray(response)) {
+            apiEvents = response
+          } else if (response && response.data && Array.isArray(response.data)) {
+            apiEvents = response.data
+          }
+        } catch (error) {
+          console.warn('Error fetching events from API:', error)
+        }
+        
+        // Dummy data tetap ada
+        const dummyEvents = [
       {
         id: 1,
         title: 'Tournament Futsal Nasional 2025',
@@ -54,8 +86,30 @@ const Events = () => {
         category: 'Workshop',
         participants_count: 30
       },
-    ])
+        ]
+        
+        // Gabungkan: local events (yang baru dibuat) di atas, lalu dummy, lalu API
+        const allEvents = [...localFormatted, ...dummyEvents, ...apiEvents]
+        setEvents(allEvents)
+      } catch (error) {
+        console.error('Error loading events:', error)
+      } finally {
     setLoading(false)
+      }
+    }
+
+    loadEvents()
+
+    // Listen untuk perubahan di localStorage (saat event baru dibuat)
+    const handleStorageChange = () => {
+      loadEvents()
+    }
+
+    window.addEventListener('localStorageUpdated', handleStorageChange)
+
+    return () => {
+      window.removeEventListener('localStorageUpdated', handleStorageChange)
+    }
   }, [isLoggedIn, navigate])
 
   const applyFilters = () => {

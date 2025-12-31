@@ -1,5 +1,8 @@
 .landing-page {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .hero {
@@ -137,6 +140,13 @@
 
 .section {
   padding: 40px 20px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.section-content {
+  padding: 0;
+  margin-bottom: 24px;
 }
 
 .section-content h2 {

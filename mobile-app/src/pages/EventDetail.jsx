@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useAuth } from '../context/AuthContext'
-import { getEvent, joinEvent } from '../services/api'
+import { getEvent, joinEvent, getCsrfToken, getUserData } from '../services/api'
 import './EventDetail.css'
 
 const EventDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { isLoggedIn, userEmail } = useAuth()
   const [event, setEvent] = useState(null)
   const [isJoined, setIsJoined] = useState(false)
+  const [isPengurus, setIsPengurus] = useState(false)
   const [showJoinModal, setShowJoinModal] = useState(false)
   const [joinData, setJoinData] = useState({
     user_email: userEmail || '',
@@ -20,30 +22,223 @@ const EventDetail = () => {
   })
   const [loading, setLoading] = useState(true)
 
+  // Fungsi helper untuk reload peserta (real-time)
+  const reloadParticipants = () => {
+    const localEvents = JSON.parse(localStorage.getItem('localEvents') || '[]')
+    const evt = localEvents.find(e => {
+      if (e.id === id) return true
+      if (String(e.id) === String(id)) return true
+      return false
+    })
+    
+    if (evt) {
+      const existingJoins = JSON.parse(localStorage.getItem('eventJoins') || '[]')
+      const creatorEmail = evt.creator_email ? evt.creator_email.toLowerCase().trim() : ''
+      const participantsList = []
+      
+      // Tambahkan creator sebagai Pengurus (hanya sekali)
+      if (creatorEmail) {
+        participantsList.push({
+          user_email: evt.creator_email,
+          role: 'Pengurus'
+        })
+      }
+      
+      // Tambahkan peserta yang sudah join (tidak termasuk creator)
+      const joinedParticipants = existingJoins.filter(j => {
+        const joinEventId = j.event_id
+        const joinEmail = (j.user_email || '').toLowerCase().trim()
+        // Filter: harus match event_id DAN bukan creator
+        return (joinEventId === id || String(joinEventId) === String(id)) && joinEmail !== creatorEmail
+      })
+      
+      joinedParticipants.forEach(j => {
+        participantsList.push({
+          user_email: j.user_email,
+          role: j.role || 'Anggota'
+        })
+      })
+      
+      // Update participants_count real-time dari jumlah peserta yang sebenarnya
+      const realParticipantsCount = participantsList.length
+      
+      // Update di state event menggunakan functional update untuk menghindari dependency
+      setEvent(prevEvent => {
+        if (prevEvent) {
+          return {
+            ...prevEvent,
+            participants_count: realParticipantsCount
+          }
+        }
+        return prevEvent
+      })
+      
+      // Update di localStorage juga
+      const evtIndex = localEvents.findIndex(e => {
+        if (e.id === id) return true
+        if (String(e.id) === String(id)) return true
+        return false
+      })
+      
+      if (evtIndex !== -1) {
+        localEvents[evtIndex].participants_count = realParticipantsCount
+        localStorage.setItem('localEvents', JSON.stringify(localEvents))
+      }
+    }
+  }
+
   useEffect(() => {
     if (!isLoggedIn) {
       navigate('/')
       return
     }
 
-    // Dummy data - replace with API call
+    const loadEvent = async () => {
+      try {
+        const email = userEmail || localStorage.getItem('userEmail') || ''
+        
+        // Cek apakah ini event dari localStorage
+        const localEvents = JSON.parse(localStorage.getItem('localEvents') || '[]')
+        const evt = localEvents.find(e => {
+          if (e.id === id) return true
+          if (String(e.id) === String(id)) return true
+          return false
+        })
+        
+        if (evt) {
+          const existingJoins = JSON.parse(localStorage.getItem('eventJoins') || '[]')
+          const creatorEmail = evt.creator_email ? evt.creator_email.toLowerCase().trim() : ''
+          const userEmailLower = email.toLowerCase().trim()
+          
+          // Hitung participants count real-time
+          const participantsList = []
+          
+          // Tambahkan creator sebagai Pengurus (hanya sekali)
+          if (creatorEmail) {
+            participantsList.push({
+              user_email: evt.creator_email,
+              role: 'Pengurus'
+            })
+          }
+          
+          // Tambahkan peserta yang sudah join (tidak termasuk creator)
+          const joinedParticipants = existingJoins.filter(j => {
+            const joinEventId = j.event_id
+            const joinEmail = (j.user_email || '').toLowerCase().trim()
+            return (joinEventId === id || String(joinEventId) === String(id)) && joinEmail !== creatorEmail
+          })
+          
+          joinedParticipants.forEach(j => {
+            participantsList.push({
+              user_email: j.user_email,
+              role: j.role || 'Anggota'
+            })
+          })
+          
+          const realParticipantsCount = participantsList.length
+          
     setEvent({
-      id: 1,
-      title: 'Tournament Futsal Nasional 2025',
-      description: 'Kompetisi futsal tingkat nasional dengan hadiah total 50 juta rupiah. Event ini diikuti oleh berbagai tim dari seluruh Indonesia.',
-      date: '2025-01-20',
-      time: '09:00',
-      location: 'Jakarta',
-      image_url: 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=400&q=80',
-      category: 'Olahraga',
-      participants_count: 120,
-      max_participants: 200,
-      price: 50000,
-      contact: '081234567890',
-      requirements: 'Peserta harus membawa sepatu futsal dan seragam tim.'
-    })
+            id: id,
+            title: evt.title,
+            description: evt.description,
+            date: evt.date,
+            time: evt.time,
+            location: evt.location,
+            image_url: evt.image || 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=400&q=80',
+            category: evt.category,
+            participants_count: realParticipantsCount,
+            max_participants: evt.max_participants || null,
+            price: evt.price || 0,
+            contact: evt.contact || '',
+            requirements: evt.requirements || '',
+            creator_email: evt.creator_email
+          })
+          
+          // Update di localStorage juga
+          const evtIndex = localEvents.findIndex(e => {
+            if (e.id === id) return true
+            if (String(e.id) === String(id)) return true
+            return false
+          })
+          
+          if (evtIndex !== -1) {
+            localEvents[evtIndex].participants_count = realParticipantsCount
+            localStorage.setItem('localEvents', JSON.stringify(localEvents))
+          }
+          
+          // Cek apakah user sudah join atau adalah creator
+          if (creatorEmail && creatorEmail === userEmailLower) {
+            setIsJoined(true)
+            setIsPengurus(true)
+          } else {
+            // Cek apakah user sudah join
+            const joined = existingJoins.some(
+              j => {
+                const joinEmail = (j.user_email || '').toLowerCase().trim()
+                const joinEventId = j.event_id
+                return (joinEventId === id || String(joinEventId) === String(id)) && joinEmail === userEmailLower
+              }
+            )
+            setIsJoined(joined)
+            
+            // Cek apakah user adalah pengurus dari join records
+            const isPengurusFromJoin = existingJoins.some(
+              j => {
+                const joinEmail = (j.user_email || '').toLowerCase().trim()
+                const joinEventId = j.event_id
+                const joinRole = (j.role || '').toLowerCase()
+                return (joinEventId === id || String(joinEventId) === String(id)) && 
+                       joinEmail === userEmailLower && 
+                       (joinRole === 'pengurus' || joinRole === 'Pengurus')
+              }
+            )
+            setIsPengurus(isPengurusFromJoin)
+          }
+          
+          setLoading(false)
+          return
+        }
+
+        // Jika tidak ada di localStorage, coba ambil dari API
+        try {
+          const response = await getEvent(id)
+          if (response && response.event) {
+            setEvent(response.event)
+          } else if (response) {
+            setEvent(response)
+          }
+        } catch (error) {
+          console.warn('Error fetching event from API:', error)
+          alert('Event tidak ditemukan')
+          navigate('/events')
+        }
+      } catch (error) {
+        console.error('Error loading event:', error)
+        alert('Terjadi kesalahan saat memuat event')
+        navigate('/events')
+      } finally {
     setLoading(false)
-  }, [id, isLoggedIn, navigate])
+      }
+    }
+
+    loadEvent()
+    
+    // Listen untuk update real-time saat ada perubahan di localStorage
+    const handleStorageUpdate = () => {
+      // Delay sedikit untuk memastikan localStorage sudah ter-update
+      setTimeout(() => {
+        reloadParticipants()
+      }, 100)
+    }
+    
+    window.addEventListener('eventJoined', handleStorageUpdate)
+    window.addEventListener('localStorageUpdated', handleStorageUpdate)
+    
+    return () => {
+      window.removeEventListener('eventJoined', handleStorageUpdate)
+      window.removeEventListener('localStorageUpdated', handleStorageUpdate)
+    }
+  }, [id, isLoggedIn, navigate, userEmail])
 
   const handleJoin = async () => {
     if (!joinData.user_email) {
@@ -52,12 +247,73 @@ const EventDetail = () => {
     }
     
     try {
-      // await joinEvent(id, joinData)
+      const email = (userEmail || localStorage.getItem('userEmail') || joinData.user_email || '').trim()
+      const normalizedEmail = email.toLowerCase().trim()
+      
+      // Simpan join record ke localStorage
+      const existingJoins = JSON.parse(localStorage.getItem('eventJoins') || '[]')
+      
+      // Cek apakah sudah join (untuk menghindari duplikasi)
+      const alreadyJoined = existingJoins.some(
+        j => {
+          const joinEmail = (j.user_email || '').toLowerCase().trim()
+          const joinEventId = j.event_id
+          return (joinEventId === id || String(joinEventId) === String(id)) && joinEmail === normalizedEmail
+        }
+      )
+      
+      if (alreadyJoined) {
+        alert('Anda sudah bergabung dengan event ini!')
+        setIsJoined(true)
+        setShowJoinModal(false)
+        return
+      }
+      
+      const joinRecord = {
+        event_id: id,
+        user_email: normalizedEmail,
+        user_name: joinData.user_name || (() => {
+          const userData = getUserData(email) || {}
+          return userData.nama_lengkap || email.split('@')[0]
+        })(),
+        phone: joinData.phone || '',
+        notes: joinData.notes || '',
+        role: 'Anggota', // User yang join menjadi anggota
+        joined_at: new Date().toISOString()
+      }
+      
+      existingJoins.push(joinRecord)
+      localStorage.setItem('eventJoins', JSON.stringify(existingJoins))
+      
+      // Coba kirim ke backend
+      try {
+        await joinEvent(id, joinData)
+      } catch (backendError) {
+        console.warn('Backend error, but join saved to localStorage:', backendError)
+      }
+      
       alert('Berhasil bergabung dengan event!')
       setIsJoined(true)
       setShowJoinModal(false)
+      
+      // Reload participants count real-time
+      reloadParticipants()
+      
+      // Trigger event untuk update daftar event
+      window.dispatchEvent(new Event('eventJoined'))
+      window.dispatchEvent(new Event('localStorageUpdated'))
     } catch (error) {
-      alert('Gagal bergabung dengan event')
+      // Jika error, tetap anggap berhasil karena sudah di localStorage
+      alert('Berhasil bergabung dengan event! (Data tersimpan lokal)')
+      setIsJoined(true)
+      setShowJoinModal(false)
+      
+      // Reload participants count real-time
+      reloadParticipants()
+      
+      // Trigger event untuk update daftar event
+      window.dispatchEvent(new Event('eventJoined'))
+      window.dispatchEvent(new Event('localStorageUpdated'))
     }
   }
 
@@ -66,9 +322,24 @@ const EventDetail = () => {
     return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
   }
 
+  // Tentukan backUrl berdasarkan dari mana user datang
+  const getBackUrl = () => {
+    // Cek apakah ada state dari navigasi sebelumnya
+    if (location.state && location.state.from === 'myevents') {
+      return '/events/myevent'
+    }
+    if (location.state && location.state.from === 'homepage') {
+      return '/homepage'
+    }
+    // Default ke daftar event
+    return '/events'
+  }
+
+  const backUrl = getBackUrl()
+
   if (loading || !event) {
     return (
-      <Layout showBack backUrl="/events">
+      <Layout showBack backUrl={backUrl}>
         <div className="event-detail-page">
           <div className="loading">Memuat...</div>
         </div>
@@ -77,7 +348,7 @@ const EventDetail = () => {
   }
 
   return (
-    <Layout showBack backUrl="/events">
+    <Layout showBack backUrl={backUrl}>
       <div className="event-detail-page">
         <div className="detail-container">
           <div className="detail-header">
@@ -145,7 +416,58 @@ const EventDetail = () => {
                 )}
               </div>
               {isJoined ? (
+                <>
+                  {isPengurus ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <button 
+                        className="btn-primary" 
+                        onClick={() => navigate(`/events/${id}/edit`)}
+                      >
+                        ✏️ Edit Event
+                      </button>
+                      <button 
+                        className="btn-secondary" 
+                        onClick={async () => {
+                          if (confirm('Yakin ingin menghapus event ini?')) {
+                            try {
+                              // Ambil CSRF token
+                              const csrfToken = await getCsrfToken()
+                              const formData = new FormData()
+                              if (csrfToken) {
+                                formData.append('_token', csrfToken)
+                              }
+                              
+                              const response = await fetch(`/api/events/${id}`, {
+                                method: 'DELETE',
+                                body: formData,
+                                credentials: 'include',
+                                headers: {
+                                  'X-XSRF-TOKEN': csrfToken || '',
+                                  'X-Requested-With': 'XMLHttpRequest',
+                                }
+                              })
+                              
+                              if (response.ok || response.status === 302) {
+                                alert('Event berhasil dihapus!')
+                                navigate('/events')
+                              } else {
+                                throw new Error('Gagal menghapus event')
+                              }
+                            } catch (error) {
+                              console.error('Error deleting event:', error)
+                              alert('Gagal menghapus event: ' + (error.message || 'Unknown error'))
+                            }
+                          }
+                        }}
+                        style={{ background: '#ff3b30', color: '#fff', border: 'none' }}
+                      >
+                        🗑️ Hapus Event
+                      </button>
+                    </div>
+                  ) : (
                 <button className="btn-secondary" disabled>Sudah Bergabung</button>
+                  )}
+                </>
               ) : (
                 <button className="btn-primary" onClick={() => setShowJoinModal(true)}>
                   Join Event

@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect, useRef } from 'react'
+import { getUserProfile, getUserData, getFotoProfile } from '../services/api'
 import './Layout.css'
 
 const Layout = ({
@@ -12,6 +13,7 @@ const Layout = ({
 }) => {
   const { isLoggedIn, userEmail, logout } = useAuth()
   const [showMenu, setShowMenu] = useState(false)
+  const [fotoProfileUrl, setFotoProfileUrl] = useState(null)
   const menuRef = useRef(null)
   const navigate = useNavigate()
 
@@ -26,6 +28,58 @@ const Layout = ({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Fetch foto profil saat user login
+  useEffect(() => {
+    const loadFotoProfile = async () => {
+      if (isLoggedIn && userEmail) {
+        try {
+          // Cek localStorage terlebih dahulu
+          const userData = getUserData(userEmail)
+          const fotoBase64 = getFotoProfile(userEmail)
+          
+          if (fotoBase64) {
+            setFotoProfileUrl(fotoBase64)
+          } else if (userData && userData.foto_profile) {
+            setFotoProfileUrl(userData.foto_profile)
+          } else {
+            // Jika tidak ada di localStorage, coba fetch dari API
+            const response = await getUserProfile(userEmail)
+            if (response.success && response.user && response.user.foto_profile_url) {
+              setFotoProfileUrl(response.user.foto_profile_url)
+            }
+          }
+        } catch (error) {
+          console.error('Error loading profile photo:', error)
+        }
+      } else {
+        setFotoProfileUrl(null)
+      }
+    }
+
+    loadFotoProfile()
+
+    // Listen untuk perubahan di localStorage (saat user update foto profil)
+    const handleStorageChange = (e) => {
+      if (e.key === 'fotoProfileBase64' || e.key === 'userData') {
+        loadFotoProfile()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    
+    // Juga listen untuk custom event (untuk same-tab updates)
+    const handleCustomStorageChange = () => {
+      loadFotoProfile()
+    }
+    
+    window.addEventListener('localStorageUpdated', handleCustomStorageChange)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      window.removeEventListener('localStorageUpdated', handleCustomStorageChange)
+    }
+  }, [isLoggedIn, userEmail])
+
   const handleLogout = () => {
     logout()
     navigate('/')
@@ -39,7 +93,7 @@ const Layout = ({
           {showBack ? (
             <Link to={backUrl} className="back-btn">← Kembali</Link>
           ) : (
-            <Link to={isLoggedIn ? '/homepage' : '/'} className="logo">Y.G.A</Link>
+            <Link to={isLoggedIn ? '/homepage' : '/'} className="logo">Y.A.P</Link>
           )}
 
           {isLoggedIn && !showBack && (
@@ -58,7 +112,20 @@ const Layout = ({
               className="profile-avatar" 
               onClick={() => setShowMenu(!showMenu)}
             >
-              {userEmail ? userEmail.charAt(0).toUpperCase() : 'U'}
+              {fotoProfileUrl ? (
+                <img 
+                  src={fotoProfileUrl} 
+                  alt="Profile" 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    borderRadius: '50%', 
+                    objectFit: 'cover' 
+                  }}
+                />
+              ) : (
+                userEmail ? userEmail.charAt(0).toUpperCase() : 'U'
+              )}
             </div>
             {showMenu && (
               <div className="profile-menu">

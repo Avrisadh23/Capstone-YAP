@@ -12,14 +12,54 @@ const Homepage = () => {
   const [communities, setCommunities] = useState([])
   const [events, setEvents] = useState([])
 
-  useEffect(() => {
-    if (!isLoggedIn) {
-      navigate('/')
-      return
-    }
-
-    // Dummy data - replace with API call
-    setCommunities([
+  const loadData = () => {
+    // Ambil komunitas dari localStorage (yang baru didaftarkan)
+    const localCommunities = JSON.parse(localStorage.getItem('localCommunities') || '[]')
+    
+    // Convert local communities ke format yang sama dengan real-time members count
+    const localFormatted = localCommunities.map((comm) => {
+      // Hitung members count real-time dari join records
+      const existingJoins = JSON.parse(localStorage.getItem('communityJoins') || '[]')
+      const creatorEmail = comm.creator_email ? comm.creator_email.toLowerCase().trim() : ''
+      const membersList = []
+      
+      // Tambahkan creator sebagai Pengurus (hanya sekali)
+      if (creatorEmail) {
+        membersList.push({
+          user_email: comm.creator_email,
+          role: 'Pengurus'
+        })
+      }
+      
+      // Tambahkan anggota yang sudah join (tidak termasuk creator)
+      const joinedMembers = existingJoins.filter(j => {
+        const joinCommId = j.community_id
+        const joinEmail = (j.user_email || '').toLowerCase().trim()
+        return (joinCommId === comm.id || String(joinCommId) === String(comm.id)) && joinEmail !== creatorEmail
+      })
+      
+      joinedMembers.forEach(j => {
+        membersList.push({
+          user_email: j.user_email,
+          role: j.role || 'Anggota'
+        })
+      })
+      
+      const realMembersCount = membersList.length
+      
+      return {
+        id: comm.id,
+        name: comm.name,
+        description: comm.description,
+        members: realMembersCount,
+        image: comm.image || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80',
+        category: comm.category,
+        location: comm.location
+      }
+    })
+    
+    // Dummy data komunitas
+    const dummyCommunities = [
       {
         id: 1,
         name: 'Komunitas Wibu Jakarta',
@@ -56,9 +96,60 @@ const Homepage = () => {
         category: 'Hobi',
         location: 'Yogyakarta'
       },
-    ])
-
-    setEvents([
+    ]
+    
+    // Gabungkan: local communities di atas, lalu dummy
+    setCommunities([...localFormatted, ...dummyCommunities])
+    
+    // Ambil event dari localStorage (yang baru didaftarkan)
+    const localEvents = JSON.parse(localStorage.getItem('localEvents') || '[]')
+    
+    // Convert local events ke format yang sama dengan real-time participants count
+    const localFormattedEvents = localEvents.map((evt) => {
+      // Hitung participants count real-time dari join records
+      const existingJoins = JSON.parse(localStorage.getItem('eventJoins') || '[]')
+      const creatorEmail = evt.creator_email ? evt.creator_email.toLowerCase().trim() : ''
+      const participantsList = []
+      
+      // Tambahkan creator sebagai Pengurus (hanya sekali)
+      if (creatorEmail) {
+        participantsList.push({
+          user_email: evt.creator_email,
+          role: 'Pengurus'
+        })
+      }
+      
+      // Tambahkan peserta yang sudah join (tidak termasuk creator)
+      const joinedParticipants = existingJoins.filter(j => {
+        const joinEventId = j.event_id
+        const joinEmail = (j.user_email || '').toLowerCase().trim()
+        return (joinEventId === evt.id || String(joinEventId) === String(evt.id)) && joinEmail !== creatorEmail
+      })
+      
+      joinedParticipants.forEach(j => {
+        participantsList.push({
+          user_email: j.user_email,
+          role: j.role || 'Anggota'
+        })
+      })
+      
+      const realParticipantsCount = participantsList.length
+      
+      return {
+        id: evt.id,
+        title: evt.title,
+        description: evt.description,
+        date: evt.date,
+        time: evt.time,
+        location: evt.location,
+        image: evt.image || 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=400&q=80',
+        category: evt.category,
+        participants: realParticipantsCount
+      }
+    })
+    
+    // Dummy data event
+    const dummyEvents = [
       {
         id: 1,
         title: 'Tournament Futsal Nasional 2025',
@@ -92,7 +183,34 @@ const Homepage = () => {
         category: 'Workshop',
         participants: 30
       },
-    ])
+    ]
+    
+    // Gabungkan: local events di atas, lalu dummy
+    setEvents([...localFormattedEvents, ...dummyEvents])
+  }
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      navigate('/')
+      return
+    }
+
+    loadData()
+    
+    // Listen untuk perubahan di localStorage (saat komunitas/event baru dibuat atau join)
+    const handleStorageChange = () => {
+      loadData()
+    }
+    
+    window.addEventListener('localStorageUpdated', handleStorageChange)
+    window.addEventListener('communityJoined', handleStorageChange)
+    window.addEventListener('eventJoined', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('localStorageUpdated', handleStorageChange)
+      window.removeEventListener('communityJoined', handleStorageChange)
+      window.removeEventListener('eventJoined', handleStorageChange)
+    }
   }, [isLoggedIn, navigate])
 
   const applyFilters = () => {
@@ -190,7 +308,7 @@ const Homepage = () => {
               <div 
                 key={community.id} 
                 className="card"
-                onClick={() => navigate(`/communities/${community.id}`)}
+                onClick={() => navigate(`/communities/${community.id}`, { state: { from: 'homepage' } })}
               >
                 <img src={community.image} alt={community.name} className="card-image" />
                 <div className="card-content">
@@ -217,7 +335,7 @@ const Homepage = () => {
               <div 
                 key={event.id} 
                 className="card"
-                onClick={() => navigate(`/events/${event.id}`)}
+                onClick={() => navigate(`/events/${event.id}`, { state: { from: 'homepage' } })}
               >
                 <img src={event.image} alt={event.title} className="card-image" />
                 <div className="card-content">
@@ -240,9 +358,9 @@ const Homepage = () => {
         <footer className="footer">
           <div className="footer-content">
             <div className="footer-section">
-              <div className="footer-logo">Y.G.A</div>
+              <div className="footer-logo">Y.A.P</div>
               <div className="footer-address">
-                PT YGA Solutions<br />
+                PT YGA Solutions x PT DASH<br />
                 Jl. Warid No.100<br />
                 Jakarta, Indonesia
               </div>

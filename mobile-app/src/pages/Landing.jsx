@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { useAuth } from '../context/AuthContext'
-import { getLandingData } from '../services/api'
+import { getLandingData, register, login as loginAPI } from '../services/api'
 import './Landing.css'
 
 const Landing = () => {
@@ -26,23 +26,106 @@ const Landing = () => {
     loadData()
   }, [])
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!email.trim()) {
       alert('Harap masukkan email')
       return
     }
-    login(email)
+    
+    try {
+      const response = await loginAPI(email.trim())
+      
+      if (response.success) {
+        // Login berhasil - user sudah terdaftar
+        login(email.trim())
     navigate('/homepage')
   }
+    } catch (error) {
+      // Handle error
+      let errorMessage = 'Terjadi kesalahan saat login'
+      
+      if (error.message) {
+        errorMessage = error.message
+        
+        // Jika user belum terdaftar, arahkan ke registrasi
+        if (error.message.includes('belum terdaftar') || error.message.includes('terdaftar')) {
+          alert(`❌ ${errorMessage}\n\nSilakan registrasi terlebih dahulu.`)
+          setModalType('register')
+          return
+        }
+      }
+      
+      alert(`❌ ${errorMessage}`)
+    }
+  }
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!email.trim() || !namaLengkap.trim() || !tglLahir) {
       alert('Harap lengkapi semua field')
       return
     }
-    // In production, this would call an API to register
-    login(email)
-    navigate('/homepage')
+    
+    try {
+      const response = await register({
+        email: email.trim(),
+        nama_lengkap: namaLengkap.trim(),
+        tgl_lahir: tglLahir,
+        foto_profile: fotoProfile
+      })
+      
+      if (response.success) {
+        alert('Registrasi berhasil! Silakan login dengan email Anda.')
+        // Trigger event untuk update foto profil di Layout
+        window.dispatchEvent(new Event('localStorageUpdated'))
+        // Reset form and switch to login modal
+        setEmail('')
+        setNamaLengkap('')
+        setTglLahir('')
+        setFotoProfile(null)
+        setFotoPreview(null)
+        setModalType('login')
+      }
+    } catch (error) {
+      // Handle validation errors
+      let errorMessage = 'Terjadi kesalahan saat registrasi'
+      
+      if (error.message) {
+        // Error dari throw new Error() di api.js
+        errorMessage = error.message
+        
+        // Jika error tentang CSRF atau backend, beri instruksi yang jelas
+        if (error.message.includes('CSRF') || error.message.includes('token')) {
+          errorMessage = 'CSRF token error. Silakan:\n1. Refresh halaman (F5)\n2. Pastikan backend Laravel berjalan (php artisan serve)\n3. Coba registrasi lagi'
+        } else if (error.message.includes('backend') || error.message.includes('Laravel')) {
+          errorMessage = 'Backend tidak dapat diakses. Pastikan:\n1. Backend Laravel berjalan di http://localhost:8000\n2. Jalankan: php artisan serve\n3. Coba registrasi lagi'
+        } else if (error.message.includes('email') && error.message.includes('terdaftar')) {
+          errorMessage = 'Email sudah terdaftar. Gunakan email lain atau login dengan email tersebut.'
+        }
+      } else if (error.response) {
+        if (error.response.data) {
+          if (error.response.data.errors) {
+            errorMessage = Object.values(error.response.data.errors).flat().join(', ')
+          } else if (error.response.data.message) {
+            errorMessage = error.response.data.message
+          }
+        } else if (error.response.status === 422) {
+          errorMessage = 'Data yang dimasukkan tidak valid. Pastikan:\n- Email belum terdaftar\n- Format tanggal lahir benar (YYYY-MM-DD)\n- Semua field diisi dengan benar'
+        } else if (error.response.status === 419) {
+          errorMessage = 'CSRF token expired. Silakan refresh halaman dan coba lagi.'
+        }
+      } else if (error.request) {
+        errorMessage = 'Tidak dapat terhubung ke server.\n\nPastikan:\n1. Backend Laravel berjalan\n   Jalankan: php artisan serve\n2. Backend berjalan di http://localhost:8000\n3. Cek browser console (F12) untuk detail error'
+      }
+      
+      console.error('Registration error details:', {
+        error: error,
+        message: error.message,
+        stack: error.stack
+      })
+      
+      // Tampilkan alert dengan error yang jelas
+      alert(`❌ ${errorMessage}\n\nData tersimpan di localStorage, tapi belum masuk ke database.\nSilakan cek browser console (F12) untuk detail lebih lanjut.`)
+    }
   }
 
   const handleFotoChange = (e) => {
@@ -226,9 +309,9 @@ const Landing = () => {
         <footer className="footer">
           <div className="footer-content">
             <div className="footer-section">
-              <div className="footer-logo">Y.G.A</div>
+              <div className="footer-logo">Y.A.P</div>
               <div className="footer-address">
-                PT YGA Solutions<br />
+                PT YGA Solutions x PT DASH<br />
                 Jl. Warid No.100<br />
                 Jakarta, Indonesia
               </div>
@@ -284,7 +367,7 @@ const Landing = () => {
               <>
                 <h2 className="modal-title">Daftar</h2>
                 <div className="modal-switch">
-                  Sudah punya akun Y.G.A? <a href="#" onClick={(e) => { e.preventDefault(); setModalType('login'); }}>Masuk</a>
+                  Sudah punya akun Y.A.P? <a href="#" onClick={(e) => { e.preventDefault(); setModalType('login'); }}>Masuk</a>
                 </div>
                 <input 
                   type="email" 

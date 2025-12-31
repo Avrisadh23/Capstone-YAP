@@ -24,13 +24,13 @@
   }
   
   .member-card.pengurus {
-    background: linear-gradient(135deg, #003087 0%, #002766 100%);
-    box-shadow: 0 20px 60px rgba(0,48,135,0.3);
+    background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%);
+    box-shadow: 0 20px 60px rgba(255,107,53,0.3);
   }
   
   .member-card.anggota {
-    background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%);
-    box-shadow: 0 20px 60px rgba(255,107,53,0.3);
+    background: linear-gradient(135deg, #003087 0%, #002766 100%);
+    box-shadow: 0 20px 60px rgba(0,48,135,0.3);
   }
   
   .member-card::before {
@@ -199,14 +199,97 @@
   }
   
   @media print {
-    .action-buttons {
-      display: none;
+    body {
+      margin: 0;
+      padding: 0;
+      background: #fff;
     }
+    
+    .layout {
+      background: #fff;
+    }
+    
+    .header {
+      display: none !important;
+    }
+    
+    .action-buttons {
+      display: none !important;
+    }
+    
+    .member-card-page {
+      background: #fff;
+      padding: 0;
+      margin: 0;
+    }
+    
     .card-container {
       padding: 0;
+      margin: 0;
+      min-height: auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      page-break-inside: avoid;
     }
+    
     .member-card {
-      box-shadow: none;
+      box-shadow: none !important;
+      page-break-inside: avoid;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+    
+    .member-card.pengurus {
+      background: linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%) !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+    
+    .member-card.anggota {
+      background: linear-gradient(135deg, #003087 0%, #002766 100%) !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+    
+    .member-card::before {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+    
+    .card-photo {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+    
+    .card-photo img {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+    }
+    
+    .card-badge {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+      background: rgba(255,255,255,0.2) !important;
+    }
+    
+    .card-info {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      color-adjust: exact;
+      background: rgba(255,255,255,0.15) !important;
+    }
+    
+    @page {
+      margin: 0;
+      size: A4 landscape;
     }
   }
   

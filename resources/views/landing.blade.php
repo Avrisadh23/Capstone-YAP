@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y.G.A - Community App</title>
+    <title>Y.A.P - Community App</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -223,7 +223,7 @@
 <body>
 <div class="page">
     <header>
-        <div class="logo">Y.G.A</div>
+        <div class="logo">Y.A.P</div>
         <nav>
             <a href="#event">Event</a>
             <a href="#komunitas">Komunitas</a>
@@ -425,9 +425,9 @@
     <footer>
         <div class="footer-grid">
             <div>
-                <div class="logo" style="margin-bottom:12px; font-size:20px;">Y.G.A</div>
+                <div class="logo" style="margin-bottom:12px; font-size:20px;">Y.A.P</div>
                 <div style="font-size:13px; line-height:1.8; color:#666; margin-bottom:16px;">
-                    PT YGA Solutions<br>
+                    PT YGA Solutions x PT DASH<br>
                     Jl. Warid No.100<br>
                     Jakarta, Indonesia
                 </div>
@@ -490,7 +490,7 @@
         <div id="registerForm">
             <h2 class="modal-title">Daftar</h2>
             <div class="modal-switch">
-                Sudah punya akun Y.G.A? <a href="#" onclick="switchToLogin(); return false;">Masuk</a>
+                Sudah punya akun Y.A.P? <a href="#" onclick="switchToLogin(); return false;">Masuk</a>
             </div>
             @if(session('error') && !session('_login_error'))
                 <div style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 14px;">

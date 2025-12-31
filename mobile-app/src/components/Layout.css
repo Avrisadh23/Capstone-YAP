@@ -63,6 +63,8 @@
   font-weight: 700;
   cursor: pointer;
   font-size: 14px;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .profile-menu {

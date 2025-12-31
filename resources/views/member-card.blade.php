@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Y.G.A - Kartu Anggota Digital</title>
+    <title>Y.A.P - Kartu Anggota Digital</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -73,7 +73,7 @@
 <body>
 <div class="page">
     <header>
-        <div class="logo"><a href="/homepage">Y.G.A</a></div>
+        <div class="logo"><a href="/homepage">Y.A.P</a></div>
         <nav>
             <a href="/homepage">Home</a>
             <a href="/events">Event</a>
@@ -100,7 +100,7 @@
     <div class="card-container">
         <div class="member-card {{ $isPengurus ? 'pengurus' : 'anggota' }}">
             <div class="card-header">
-                <div class="card-logo">Y.G.A</div>
+                <div class="card-logo">Y.A.P</div>
                 <div class="card-badge">{{ $isPengurus ? 'PENGURUS' : 'ANGGOTA' }}</div>
             </div>
             <div class="card-body">
@@ -129,7 +129,7 @@
                 </div>
             </div>
             <div class="card-footer">
-                Kartu Anggota Digital Y.G.A Community Platform
+                Kartu Anggota Digital Y.A.P Community Platform
             </div>
         </div>
     </div>

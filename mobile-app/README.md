@@ -1,6 +1,6 @@
-# Y.G.A Mobile App
+# Y.A.P Mobile App
 
-Aplikasi mobile React untuk platform komunitas Y.G.A. Dibuat dengan React, Vite, dan React Router.
+Aplikasi mobile React untuk platform komunitas Y.A.P. Dibuat dengan React, Vite, dan React Router.
 
 ## Instalasi
 
