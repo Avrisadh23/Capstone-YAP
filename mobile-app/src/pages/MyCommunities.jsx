@@ -132,8 +132,14 @@ const MyCommunities = () => {
 
     window.addEventListener('localStorageUpdated', handleStorageChange)
     window.addEventListener('communityJoined', handleStorageChange)
+    
+    // Real-time update interval untuk update jumlah anggota secara berkala
+    const updateInterval = setInterval(() => {
+      loadMyCommunities()
+    }, 2000) // Update setiap 2 detik
 
     return () => {
+      clearInterval(updateInterval)
       window.removeEventListener('localStorageUpdated', handleStorageChange)
       window.removeEventListener('communityJoined', handleStorageChange)
     }

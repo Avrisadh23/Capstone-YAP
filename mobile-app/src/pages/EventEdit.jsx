@@ -20,8 +20,9 @@ const EventEdit = () => {
     price: '',
     contact: '',
     requirements: '',
-    image_url: ''
+    image: null
   })
+  const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -30,40 +31,177 @@ const EventEdit = () => {
       return
     }
 
-    // Dummy data - replace with API call
-    setFormData({
-      title: 'Tournament Futsal Nasional 2025',
-      description: 'Kompetisi futsal tingkat nasional',
-      date: '2025-01-20',
-      time: '09:00',
-      location: 'Jakarta',
-      category: 'Olahraga',
-      max_participants: '200',
-      price: '50000',
-      contact: '081234567890',
-      requirements: 'Peserta harus membawa sepatu futsal',
-      image_url: 'https://images.unsplash.com/photo-1575361204480-aadea25e6e68?w=400&q=80'
-    })
-    setLoading(false)
+    const loadEvent = async () => {
+      try {
+        // Cek apakah ini event dari localStorage - cari berdasarkan ID
+        const localEvents = JSON.parse(localStorage.getItem('localEvents') || '[]')
+        
+        const evt = localEvents.find(e => {
+          // Match exact ID
+          if (e.id === id) return true
+          // Match jika ID adalah string number dan event punya id number
+          if (String(e.id) === String(id)) return true
+          return false
+        })
+        
+        if (evt) {
+          // Set form data dari event yang ditemukan
+          setFormData({
+            title: evt.title || '',
+            description: evt.description || '',
+            date: evt.date || '',
+            time: evt.time || '',
+            location: evt.location || '',
+            category: evt.category || '',
+            max_participants: evt.max_participants || '',
+            price: evt.price || '',
+            contact: evt.contact || '',
+            requirements: evt.requirements || '',
+            image: null // File akan di-set saat user upload
+          })
+          // Set preview dari gambar yang sudah ada (jika ada)
+          if (evt.image) {
+            setImagePreview(evt.image)
+          }
+          setLoading(false)
+          return
+        }
+
+        // Jika tidak ada di localStorage, coba ambil dari API
+        try {
+          const response = await getEvent(id)
+          if (response && response.event) {
+            const evtData = response.event
+            setFormData({
+              title: evtData.title || '',
+              description: evtData.description || '',
+              date: evtData.date || '',
+              time: evtData.time || '',
+              location: evtData.location || '',
+              category: evtData.category || '',
+              max_participants: evtData.max_participants || '',
+              price: evtData.price || '',
+              contact: evtData.contact || '',
+              requirements: evtData.requirements || '',
+              image: null
+            })
+            // Set preview dari gambar yang sudah ada (jika ada)
+            if (evtData.image_url) {
+              setImagePreview(evtData.image_url)
+            }
+          } else if (response) {
+            setFormData({
+              title: response.title || '',
+              description: response.description || '',
+              date: response.date || '',
+              time: response.time || '',
+              location: response.location || '',
+              category: response.category || '',
+              max_participants: response.max_participants || '',
+              price: response.price || '',
+              contact: response.contact || '',
+              requirements: response.requirements || '',
+              image: null
+            })
+            // Set preview dari gambar yang sudah ada (jika ada)
+            if (response.image_url) {
+              setImagePreview(response.image_url)
+            }
+          } else {
+            alert('Event tidak ditemukan')
+            navigate('/events')
+          }
+        } catch (error) {
+          console.warn('Error fetching event from API:', error)
+          alert('Event tidak ditemukan')
+          navigate('/events')
+        }
+      } catch (error) {
+        console.error('Error loading event:', error)
+        alert('Terjadi kesalahan saat memuat event')
+        navigate('/events')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadEvent()
   }, [id, isLoggedIn, navigate])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     
     try {
-      // await updateEvent(id, formData)
+      // Update di localStorage terlebih dahulu
+      const localEvents = JSON.parse(localStorage.getItem('localEvents') || '[]')
+      const evtIndex = localEvents.findIndex(e => {
+        if (e.id === id) return true
+        if (String(e.id) === String(id)) return true
+        return false
+      })
+      
+      if (evtIndex !== -1) {
+        // Update data event di localStorage
+        localEvents[evtIndex] = {
+          ...localEvents[evtIndex],
+          title: formData.title,
+          description: formData.description,
+          date: formData.date,
+          time: formData.time,
+          location: formData.location,
+          category: formData.category,
+          max_participants: formData.max_participants || null,
+          price: formData.price || null,
+          contact: formData.contact || '',
+          requirements: formData.requirements || '',
+          image: imagePreview || localEvents[evtIndex].image // Gunakan preview baru atau tetap gunakan yang lama
+        }
+        localStorage.setItem('localEvents', JSON.stringify(localEvents))
+        
+        // Trigger event untuk update real-time
+        window.dispatchEvent(new Event('localStorageUpdated'))
+      }
+      
+      // Coba update ke backend juga
+      try {
+        const submitData = {
+          ...formData,
+          image_url: imagePreview // Kirim preview sebagai image_url untuk backend
+        }
+        await updateEvent(id, submitData)
+      } catch (backendError) {
+        console.warn('Backend error, but changes saved to localStorage:', backendError)
+      }
+      
       alert('Event berhasil diperbarui!')
       navigate(`/events/${id}`)
     } catch (error) {
+      console.error('Error updating event:', error)
       alert('Gagal memperbarui event')
     }
   }
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
+    if (e.target.name === 'image') {
+      const file = e.target.files[0]
+      if (file) {
+        setFormData({
+          ...formData,
+          image: file
+        })
+        // Create preview
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setImagePreview(reader.result)
+        }
+        reader.readAsDataURL(file)
+      }
+    } else {
+      setFormData({
+        ...formData,
+        [e.target.name]: e.target.value
+      })
+    }
   }
 
   if (loading) {
@@ -188,14 +326,31 @@ const EventEdit = () => {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">URL Gambar</label>
+              <label className="form-label">Gambar Event</label>
               <input 
-                type="url" 
-                name="image_url"
+                type="file" 
+                name="image"
                 className="form-input"
-                value={formData.image_url}
+                accept="image/*"
                 onChange={handleChange}
+                style={{ padding: '8px' }}
               />
+              {imagePreview && (
+                <div style={{ marginTop: '12px' }}>
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    style={{ 
+                      width: '100%', 
+                      maxWidth: '400px', 
+                      height: '200px', 
+                      objectFit: 'cover', 
+                      borderRadius: '8px', 
+                      border: '2px solid #ddd' 
+                    }}
+                  />
+                </div>
+              )}
             </div>
             <div className="form-group">
               <label className="form-label">Persyaratan</label>

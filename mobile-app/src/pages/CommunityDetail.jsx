@@ -77,13 +77,16 @@ const CommunityDetail = () => {
       // Update members_count real-time dari jumlah anggota yang sebenarnya
       const realMembersCount = membersList.length
       
-      // Update di state community
-      if (community) {
-        setCommunity({
-          ...community,
-          members_count: realMembersCount
-        })
-      }
+      // Update di state community menggunakan functional update untuk selalu menggunakan state terbaru
+      setCommunity(prev => {
+        if (prev) {
+          return {
+            ...prev,
+            members_count: realMembersCount
+          }
+        }
+        return prev
+      })
       
       // Update di localStorage juga
       const commIndex = localCommunities.findIndex(c => {
@@ -123,7 +126,26 @@ const CommunityDetail = () => {
         console.log('Found community:', comm ? { id: comm.id, name: comm.name, creator: comm.creator_email } : 'NOT FOUND')
         
         if (comm) {
-          // Set community data awal
+          // Hitung members_count real-time terlebih dahulu
+          const existingJoins = JSON.parse(localStorage.getItem('communityJoins') || '[]')
+          const creatorEmail = comm.creator_email ? comm.creator_email.toLowerCase().trim() : ''
+          let initialMembersCount = 0
+          
+          // Tambahkan creator (1)
+          if (creatorEmail) {
+            initialMembersCount = 1
+          }
+          
+          // Tambahkan anggota yang sudah join (tidak termasuk creator)
+          const joinedMembers = existingJoins.filter(j => {
+            const joinCommId = j.community_id
+            const joinEmail = (j.user_email || '').toLowerCase().trim()
+            return (joinCommId === id || String(joinCommId) === String(id)) && joinEmail !== creatorEmail
+          })
+          
+          initialMembersCount += joinedMembers.length
+          
+          // Set community data awal dengan members_count yang sudah dihitung
           setCommunity({
             id: id,
             name: comm.name,
@@ -131,7 +153,7 @@ const CommunityDetail = () => {
             location: comm.location,
             image_url: comm.image || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&q=80',
             category: comm.category,
-            members_count: 1, // Akan di-update oleh reloadMembers
+            members_count: initialMembersCount, // Sudah dihitung real-time
             contact: comm.contact || '',
             rules: comm.rules || ''
           })
@@ -141,8 +163,7 @@ const CommunityDetail = () => {
           
           // Cek apakah user sudah join atau adalah creator
           const email = (userEmail || localStorage.getItem('userEmail') || '').toLowerCase().trim()
-          const creatorEmail = comm.creator_email ? comm.creator_email.toLowerCase().trim() : ''
-          const existingJoins = JSON.parse(localStorage.getItem('communityJoins') || '[]')
+          // creatorEmail dan existingJoins sudah dideklarasikan di atas
           
           if (email && creatorEmail) {
             console.log('Comparing emails - User:', email, 'Creator:', creatorEmail, 'Match:', creatorEmail === email)
@@ -244,6 +265,11 @@ const CommunityDetail = () => {
       setTimeUpdate(prev => prev + 1)
     }, 60000) // Update setiap 1 menit
     
+    // Real-time update untuk jumlah anggota (update setiap 2 detik)
+    const membersUpdateInterval = setInterval(() => {
+      reloadMembers()
+    }, 2000) // Update setiap 2 detik
+    
     // Listen untuk perubahan join (untuk update setelah join)
     const handleJoinUpdate = () => {
       const email = (userEmail || localStorage.getItem('userEmail') || '').toLowerCase().trim()
@@ -287,6 +313,7 @@ const CommunityDetail = () => {
 
     return () => {
       clearInterval(timeUpdateInterval)
+      clearInterval(membersUpdateInterval)
       window.removeEventListener('forumMessageAdded', handleForumUpdate)
       window.removeEventListener('communityJoined', handleJoinUpdate)
       window.removeEventListener('localStorageUpdated', handleJoinUpdate)
